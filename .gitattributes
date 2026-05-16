@@ -1,0 +1,16 @@
+* text=auto eol=lf
+
+*.sv         text eol=lf
+*.v          text eol=lf
+*.vhd        text eol=lf
+*.cpp        text eol=lf
+*.h          text eol=lf
+*.py         text eol=lf
+*.sh         text eol=lf eol=lf
+*.md         text eol=lf
+Makefile     text eol=lf
+
+# Binary / generated artifacts
+obj_dir/     export-ignore
+*.log        export-ignore
+synth_report/ export-ignore
