@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Verilator C++ harness for fir_core. Drives two parallel DUT instances
 // (16-tap and 32-tap low-pass FIR) and cross-validates each output beat

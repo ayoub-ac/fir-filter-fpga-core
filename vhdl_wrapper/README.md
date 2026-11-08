@@ -8,12 +8,13 @@ it from a VHDL design that does not want to touch SystemVerilog directly.
 
 **Wrapper only.** The FIR datapath and saturating clamp live in
 `rtl/*.sv` and are instantiated as a SystemVerilog black-box.
-Mixed-language elaboration is supported by every commercial simulator
-and synthesiser the core has been tested against.
+Mixed-language elaboration is intended to work with mixed-language
+simulators and synthesisers; the wrapper has not been verified with any
+tool.
 
-A pure VHDL re-implementation of the datapath is on the roadmap
-(Premium tier, scope: parity with `rtl/fir_core.sv` including the same
-testbench checks). Until then, treat this directory as a binding layer,
+A pure VHDL re-implementation of the datapath is a possible future
+addition (not implemented; scope: parity with `rtl/fir_core.sv`
+including the same testbench checks). Until then, treat this directory as a binding layer,
 not as a second implementation.
 
 ## Usage
@@ -87,8 +88,8 @@ end architecture;
 
 ## What this wrapper does NOT change
 
-* Latency: identical to `fir_core.sv`. 2 cycles from input accept to
-  output TVALID.
+* Latency: intended to be identical to `fir_core.sv` (intended 2 cycles
+  from input accept to output TVALID; not verified).
 * Endianness: scalar fields. The coefficient bus uses the same
   bit-packing convention (tap k = bits k*COEFF_WIDTH +: COEFF_WIDTH).
 * Reset polarity: still active-low synchronous (`rst_ni`).

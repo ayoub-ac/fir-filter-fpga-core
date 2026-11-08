@@ -1,7 +1,9 @@
 # Resource estimates
 
-Numbers below are from Yosys 0.x generic synthesis (`make synth_report`).
-They are pre-place-and-route. See `SYNTH_REPORT.md` for the most recent
+> **Unverified estimates.** The figures in this file have not been confirmed by a recorded, reproducible synthesis run or by hardware measurement. Treat every LUT, FF, BRAM, DSP, Fmax, throughput, latency and power figure here as an unverified estimate. Run `make synth_report` with your own toolchain to get real numbers.
+
+Numbers below are unverified estimates for Yosys generic synthesis
+(`make synth_report`), not a recorded run. They are pre-place-and-route. See `SYNTH_REPORT.md` for the most recent
 run; this document explains what dominates the area and how to shrink
 it.
 
@@ -11,15 +13,14 @@ Configuration: `N_TAPS = 16`, `DATA_WIDTH = 16`, `COEFF_WIDTH = 16`.
 
 | Target                         | Comment |
 |--------------------------------|---------|
-| Lattice iCE40 UP5K             | LUT-heavy when DSP inference is off (16 signed multipliers cost ~1500 LUT4); with `synth_ice40 -dsp` Yosys infers SB_MAC16 blocks and the soft LUT count drops below 600. The UP5K has 8 SB_MAC16 blocks, so a 16-tap filter at default width fits but is tight; a 32-tap filter requires the Premium symmetric-folded variant. |
+| Lattice iCE40 UP5K             | LUT-heavy when DSP inference is off (16 signed multipliers cost ~1500 LUT4); with `synth_ice40 -dsp` Yosys infers SB_MAC16 blocks and the soft LUT count drops below 600. The UP5K has 8 SB_MAC16 blocks, so a 16-tap filter at default width fits but is tight; a 32-tap filter would need a symmetric-folded variant (not implemented). |
 | Lattice ECP5 LFE5UM-25         | ECP5 has MULT18X18 blocks; Yosys with `-abc9` packs each multiplier into one and the soft LUT count drops to a couple of dozen. 16 DSPs used. |
 | Xilinx Artix-7 XC7A35T         | Yosys-generic synthesis here splits each 16x16 into two halves (`mul_int_l/h`), so the DSP count appears doubled. Vivado synth_design folds each multiplier into a single DSP48E1 with one input register and one output register; the soft LUT count drops further. |
 | Cyclone V 5CSEMA5F31C6         | Quartus folds each multiplier into a single MULT18X18 block. ALM count is much lower than the Yosys soft estimate. |
 | Gowin GW1NR-9 (Tang Nano 9K)   | Not characterised here. Vendor flow uses MULT9X9 / MULT18X18 hard blocks; size comparable to ECP5. |
 
 For exact LUT/FF/DSP/BRAM numbers run `make synth_report` and read
-`SYNTH_REPORT.md`. The synthesis-comparison report is regenerated on
-every CI build.
+`SYNTH_REPORT.md`. No CI regenerates the synthesis-comparison report.
 
 ## What dominates the area
 
@@ -31,8 +32,8 @@ every CI build.
   (`DATA_WIDTH + COEFF_WIDTH + ceil(log2(N_TAPS)) + 1` = 37 bits at
   default). Total FF count grows linearly with the tap count.
 - **`N_TAPS` per-tap adders** on the partial-sum chain; the synthesiser
-  packs the carry chain. The adder critical path is exactly one adder
-  long regardless of the tap count.
+  packs the carry chain. The adder critical path is intended to be one
+  adder long regardless of the tap count (not verified).
 - **Saturating output cast**: a pair of `ACC_W`-bit comparators plus a
   3:1 mux. Negligible compared to the multipliers.
 - **AXIS handshake glue**: a single FF (`out_full_q`) plus an
@@ -46,10 +47,10 @@ every CI build.
 - **Reduce `DATA_WIDTH`**. 12-bit ADC front-ends often drive a 12-bit
   data path; the multiplier becomes 12 * 16 -> 28-bit and the
   accumulator narrows accordingly.
-- **Symmetric folding** (Premium tier). For symmetric impulse
+- **Symmetric folding** (not implemented). For symmetric impulse
   responses (linear-phase filters), pair-add the mirrored taps before
   the multiply. Halves the multiplier count for even `N_TAPS`.
-- **Time-multiplexed single multiplier** (Premium tier). One
+- **Time-multiplexed single multiplier** (not implemented). One
   multiplier shared across all taps, latency = `N_TAPS` cycles
   per sample. Recommended for tiny iCE40 designs where the DSP
   count is the binding constraint.
@@ -70,7 +71,7 @@ every CI build.
   the output rate is divided by M.
 - **Pipelined multiplier register stage** (roadmap). Insert a register
   in front of each multiplier; vendor DSP blocks absorb it for free,
-  and `f_max` rises to >300 MHz on Artix-7.
+  and `f_max` should rise on Artix-7 (no figure measured).
 
 ## Frequency
 

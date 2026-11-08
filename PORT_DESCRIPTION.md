@@ -42,8 +42,8 @@ de-assert it before `tready_o` accepts the beat).
 
 The FIR drives `m_axis_tvalid_o` and `m_axis_tdata_o`; the consumer
 drives `m_axis_tready_i`. Once asserted, `m_axis_tvalid_o` and
-`m_axis_tdata_o` are stable until the consumer accepts the beat
-(SVA-checked).
+`m_axis_tdata_o` are intended to be stable until the consumer accepts
+the beat (SVA assertions included; results not independently confirmed).
 
 ```
 clk_i           |‾|_|‾|_|‾|_|‾|_|‾|_|‾|_
@@ -57,14 +57,14 @@ m_axis_tuser_o   xx s0 (held until accepted; 1 = saturated this beat)
 
 From the cycle a sample is accepted on the input side (TVALID and
 TREADY both high) to the cycle the corresponding output beat is
-visible on the output side (TVALID high) is exactly **2 clock cycles**:
+visible on the output side (TVALID high) is intended to be **2 clock cycles** (not verified):
 
 - Cycle 0: input accepted, partial-sum chain advances.
 - Cycle 1: chain settled, accumulator at tap 0 holds the output value.
 - Cycle 2: saturated output is registered, `m_axis_tvalid_o` rises.
 
-Latency does NOT depend on `N_TAPS`; it is fixed by the structure of
-the pipeline.
+Latency is intended not to depend on `N_TAPS`; it is meant to be fixed
+by the structure of the pipeline. Not verified.
 
 ## Coefficients
 
@@ -100,7 +100,7 @@ the flag is meaningful per-beat, not cumulative.
 
 ## Throughput
 
-One sample per cycle once the pipeline is primed and the consumer is
-not back-pressuring. Every cycle in steady state can transfer one
-input AND one output AXIS beat, because the input acceptance and the
+Intended: one sample per cycle once the pipeline is primed and the
+consumer is not back-pressuring (not verified). Every cycle in steady
+state is intended to transfer one input AND one output AXIS beat, because the input acceptance and the
 output drain run on independent halves of the same cycle.

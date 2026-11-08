@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Parametric FIR filter (transposed direct form) with AXI4-Stream
 // handshake on input and output, signed saturating cast on the output.

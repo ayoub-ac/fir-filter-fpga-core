@@ -1,19 +1,20 @@
 # fir-filter-fpga-core
 
-[![License: GPL-3.0-or-later or commercial](https://img.shields.io/badge/license-GPL--3.0%20%7C%20commercial-blue.svg)](LICENSE.md)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#verification)
-[![Lint](https://img.shields.io/badge/Verilator%20lint-clean-brightgreen.svg)](#build--test)
+[![License: GPL-3.0 | commercial](https://img.shields.io/badge/license-GPL--3.0%20%7C%20commercial-blue.svg)](LICENSE.md)
+
+> **Status: experimental and unverified.** This core was written with AI assistance and has not been independently verified in simulation regressions, formal proofs or hardware. Claims in this repository about protocol compliance, test results, timing and resource use are unverified. Do not use it in production or safety-critical designs without your own verification. No support or maintenance is provided.
 
 A small, synthesisable parametric FIR filter IP core in SystemVerilog.
 Transposed direct form, AXI4-Stream input/output, signed saturating
-output cast, runtime-reconfigurable coefficients. Targets iCE40, ECP5,
-Xilinx 7-series, Cyclone V, and Tang Nano 9K.
+output cast, runtime-reconfigurable coefficients. Intended for iCE40, ECP5,
+Xilinx 7-series, Cyclone V, and Tang Nano 9K; not verified on any of them.
 
-The core is verified bit-exactly against `scipy.signal.lfilter`
-running the same coefficients on the same input streams (16-tap and
-32-tap Hamming-windowed low-pass), with backpressure, saturation, and
-mid-stream coefficient-reconfiguration tests added on top. No FPGA
-hardware is required for the test suite.
+The included testbench is intended to compare the core bit-exactly
+against `scipy.signal.lfilter` running the same coefficients on the
+same input streams (16-tap and 32-tap Hamming-windowed low-pass), with
+backpressure, saturation, and mid-stream coefficient-reconfiguration
+tests added on top. Tests are included; results not independently
+confirmed. No FPGA hardware is required for the test suite.
 
 ## What this core is for
 
@@ -25,10 +26,10 @@ hardware is required for the test suite.
 | ML preprocessing             | Pre-emphasis, low-pass before resampling        |
 | Industrial sensor front-end  | Mains-hum notch, sensor noise filtering         |
 
-One sample in, one sample out, deterministic 2-cycle latency
-(input-accept to TVALID). The longest combinational path is exactly
-one multiplier + one adder, so f_max scales independently of the tap
-count.
+One sample in, one sample out, intended 2-cycle latency
+(input-accept to TVALID; not verified). The longest combinational path
+is intended to be one multiplier + one adder, so f_max should scale
+independently of the tap count (not verified).
 
 ## Architecture
 
@@ -51,7 +52,7 @@ than on a sample delay line.
 
 Properties:
 
-- Per-tap multiplier infers a single DSP block on Vivado / Quartus.
+- Per-tap multiplier is intended to infer a single DSP block on Vivado / Quartus (not verified).
 - One register per tap; pipeline depth is constant in N.
 - Coefficients sampled combinationally on every accepted input
   (runtime reconfiguration takes effect on the next sample).
@@ -61,7 +62,7 @@ Properties:
 ```bash
 git clone https://github.com/ayoub-ac/fir-filter-fpga-core.git
 cd fir-filter-fpga-core
-make lint test            # Verilator lint + scipy cross-validation
+make lint test            # Verilator lint + scipy cross-validation (results not independently confirmed)
 make synth_report         # SYNTH_REPORT.md across iCE40/ECP5/Xilinx/Vivado/Quartus
 ```
 
@@ -89,22 +90,25 @@ make lint            # static check the RTL
 make test            # build and run the full regression
 ```
 
-A passing run ends with `+PASS all tests passed` and exits 0.
+The testbench is written to end with `+PASS all tests passed` and exit 0 on success. Tests are included; results not independently confirmed.
 
 ## Verification
+
+Intended tests (included in `tb/`; results not independently confirmed):
 
 | # | Test                              | Coverage                                                    |
 |---|-----------------------------------|-------------------------------------------------------------|
 | 1 | Reset behaviour                   | TVALID held low after reset                                 |
 | 2 | 16-tap low-pass cross-validation  | 256 random int16 samples, bit-exact vs `scipy.signal.lfilter` |
 | 3 | 32-tap low-pass cross-validation  | 256 samples, bit-exact vs `scipy.signal.lfilter`            |
-| 4 | Backpressure                      | Throttled TREADY, output stream still bit-exact             |
+| 4 | Backpressure                      | Throttled TREADY, output stream compared bit-exactly        |
 | 5 | Saturation                        | Overscaled coefficients force clip; tuser agrees with rail  |
 | 6 | Coefficient reconfig mid-stream   | Identity to low-pass swap; output transitions on next sample|
 
-Six SVA properties run on every cycle (TVALID stable, TDATA stable,
-TREADY non-X, output bounded under saturation, no phantom outputs,
-in-flight count bounded). Eight functional coverage bins reach 100%
+Six SVA properties are written to be checked on every cycle (TVALID
+stable, TDATA stable, TREADY non-X, output bounded under saturation,
+no phantom outputs, in-flight count bounded). Eight functional coverage
+bins are defined; coverage results not independently confirmed
 (`in16_handshake`, `in32_handshake`, `out16_handshake`,
 `out32_handshake`, `backpressure_in`, `backpressure_out`,
 `saturated_high`, `saturated_low`).
@@ -117,14 +121,14 @@ xilinx) is mandatory; Vivado and Quartus are detected automatically.
 
 ## Variants
 
-| Variant                            | Use case                                            | Tier |
-|------------------------------------|-----------------------------------------------------|------|
-| `rtl/fir_core.sv`                  | Default 16-tap / 16-bit / Q1.15 transposed FIR      | GPL  |
-| `rtl/fir_saturate.sv`              | Saturating signed cast (drop-in)                    | GPL  |
-| `vhdl_wrapper/fir_core_vhdl.vhd`   | VHDL-2008 entity wrapping the SV core               | All  |
+| Variant                            | Use case                                            |
+|------------------------------------|-----------------------------------------------------|
+| `rtl/fir_core.sv`                  | Default 16-tap / 16-bit / Q1.15 transposed FIR      |
+| `rtl/fir_saturate.sv`              | Saturating signed cast (drop-in)                    |
+| `vhdl_wrapper/fir_core_vhdl.vhd`   | VHDL-2008 entity wrapping the SV core               |
 
-Premium tier (on roadmap, not yet shipped): symmetric-coefficient
-folded variant for 50% multiplier savings, time-multiplexed single-
+Possible future variants (not implemented): symmetric-coefficient
+folded variant to reduce the multiplier count, time-multiplexed single-
 multiplier variant for tiny iCE40 targets, polyphase decimator /
 interpolator variants for sample-rate conversion.
 

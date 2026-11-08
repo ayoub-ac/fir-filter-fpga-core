@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later OR Commercial
+// SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial
 //
 // Saturating signed cast: take a wide signed accumulator and clip it
 // down to OUT_W bits, signaling saturation. Used by fir_core to bring
